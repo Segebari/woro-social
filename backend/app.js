@@ -10,8 +10,6 @@ app.use(express.json());
 const FB_GRAPH_API = 'https://graph.facebook.com/v22.0';
 const ACCESS_TOKEN = process.env.FB_ACCESS_TOKEN;
 
-
-// Add this function
 function mockResponse(type, error) {
   console.error(`API failed for ${type}:`, error.message);
   if (type === 'accounts') {
@@ -40,16 +38,14 @@ function mockResponse(type, error) {
 }
 
 
-// Route to get Instagram accounts linked to user's Pages (pages_show_list)
 app.get("/api/accounts", async (req, res) => {
   try {
-    // Step 1: Get Pages user manages
     const pagesResponse = await axios.get(`${FB_GRAPH_API}/me/accounts`, {
       params: { access_token: ACCESS_TOKEN },
     });
     const pages = pagesResponse.data.data;
 
-    // Step 2: Filter Pages with Instagram Business accounts
+
     const accounts = await Promise.all(
       pages.map(async (page) => {
         const igResponse = await axios.get(`${FB_GRAPH_API}/${page.id}`, {
@@ -64,17 +60,16 @@ app.get("/api/accounts", async (req, res) => {
           : null;
       })
     );
-    const validAccounts = accounts.filter(Boolean); // Remove nulls
+    const validAccounts = accounts.filter(Boolean);
     if (validAccounts.length === 0)
       throw new Error("No Instagram Business accounts found");
     res.json(validAccounts);
   } catch (error) {
     console.error("API failed for accounts:", error.message);
-    res.json(mockResponse("accounts", error)); // Fallback to mock
+    res.json(mockResponse("accounts", error));
   }
 });
 
-// Route to get DMs (instagram_manage_messages)
 app.get("/api/messages/:igUserId", async (req, res) => {
   const { igUserId } = req.params;
   try {
@@ -93,7 +88,6 @@ app.get("/api/messages/:igUserId", async (req, res) => {
   }
 });
 
-// Route to send a DM (instagram_manage_messages)
 app.post('/api/messages/:igUserId', async (req, res) => {
   const { igUserId } = req.params;
   const { recipientId, message } = req.body;
@@ -108,7 +102,6 @@ app.post('/api/messages/:igUserId', async (req, res) => {
   }
 });
 
-// Route to get posts and comments (instagram_manage_comments)
 app.get('/api/posts/:igUserId', async (req, res) => {
   const { igUserId } = req.params;
   try {
@@ -121,7 +114,6 @@ app.get('/api/posts/:igUserId', async (req, res) => {
   }
 });
 
-// Route to post a comment (instagram_manage_comments)
 app.post('/api/comments/:mediaId', async (req, res) => {
   const { mediaId } = req.params;
   const { message } = req.body;
@@ -135,10 +127,10 @@ app.post('/api/comments/:mediaId', async (req, res) => {
   }
 });
 
-// Route to configure webhook (pages_manage_metadata)
+
 app.post('/api/webhook/:pageId', async (req, res) => {
   const { pageId } = req.params;
-  const { fields } = req.body; // e.g., ['messages', 'comments']
+  const { fields } = req.body; 
   try {
     const response = await axios.post(`${FB_GRAPH_API}/${pageId}/subscribed_apps`, {
       subscribed_fields: fields.join(','),
